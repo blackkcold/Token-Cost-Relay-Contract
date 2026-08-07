@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://relay-contract.example.invalid/v1/envelope.schema.json",
+  "title": "Opaque AES-256-GCM Envelope v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["v", "nonce", "ciphertext", "tag"],
+  "properties": {
+    "v": { "const": 1 },
+    "nonce": {
+      "type": "string",
+      "description": "Standard Base64 encoding of a 12-byte nonce",
+      "pattern": "^[A-Za-z0-9+/]{16}$"
+    },
+    "ciphertext": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 60000,
+      "pattern": "^[A-Za-z0-9+/]+={0,2}$"
+    },
+    "tag": {
+      "type": "string",
+      "description": "Standard Base64 encoding of a 16-byte authentication tag",
+      "pattern": "^[A-Za-z0-9+/]{22}==$"
+    }
+  }
+}

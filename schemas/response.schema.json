@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://relay-contract.example.invalid/v1/response.schema.json",
+  "title": "Relay Query Response v1",
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requestId", "envelope"],
+      "properties": {
+        "requestId": { "type": "string", "pattern": "^[A-Za-z0-9_-]{16,100}$" },
+        "envelope": { "$ref": "envelope.schema.json" }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "error"],
+      "properties": {
+        "code": {
+          "type": "string",
+          "enum": [
+            "ALREADY_PAIRED",
+            "DEVICE_NOT_FOUND",
+            "DEVICE_RATE_LIMITED",
+            "DUPLICATE_REQUEST",
+            "INTERNAL_ERROR",
+            "INVALID_APP_CREDENTIALS",
+            "INVALID_CREDENTIALS",
+            "INVALID_DEVICE_CREDENTIALS",
+            "INVALID_PAIRING_PAYLOAD",
+            "INVALID_PC_CREDENTIALS",
+            "INVALID_RELAY_ENVELOPE",
+            "INVALID_REQUEST",
+            "IP_BLOCKED",
+            "NOT_FOUND",
+            "PAIRING_INVALID_OR_EXPIRED",
+            "PAIRING_RATE_LIMITED",
+            "PC_DISCONNECTED",
+            "PC_OFFLINE",
+            "PC_RESPONSE_TIMEOUT",
+            "PC_SEND_FAILED",
+            "REGISTRATION_RATE_LIMITED",
+            "RELAY_INTERNAL_ERROR",
+            "SERVER_SHUTDOWN",
+            "TOO_MANY_REQUESTS"
+          ]
+        },
+        "error": { "type": "string", "minLength": 1, "maxLength": 256 }
+      }
+    }
+  ]
+}

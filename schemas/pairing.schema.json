@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://relay-contract.example.invalid/v1/pairing.schema.json",
+  "title": "Relay Pairing Payload v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "deviceID", "pairCode", "e2eKey", "expiresAtMilliseconds"],
+  "properties": {
+    "version": { "const": 1 },
+    "deviceID": { "type": "string", "pattern": "^[A-Za-z0-9_-]{16,80}$" },
+    "pairCode": { "type": "string", "minLength": 24, "maxLength": 100 },
+    "e2eKey": {
+      "type": "string",
+      "description": "Standard Base64 encoding of exactly 32 bytes",
+      "pattern": "^[A-Za-z0-9+/]{43}=$"
+    },
+    "expiresAtMilliseconds": { "type": "integer", "minimum": 1 }
+  }
+}
