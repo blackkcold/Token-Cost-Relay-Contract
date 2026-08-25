@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://relay-contract.example.invalid/v1/section.schema.json",
+  "title": "Encoded Analytics Section v1.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["encoding", "uncompressedBytes", "data"],
+  "properties": {
+    "encoding": { "enum": ["json+zlib", "json"] },
+    "uncompressedBytes": { "type": "integer", "minimum": 0, "maximum": 131072 },
+    "data": { "type": "string", "minLength": 1, "maxLength": 60000, "pattern": "^[A-Za-z0-9+/]+={0,2}$" }
+  }
+}
