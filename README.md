@@ -5,8 +5,8 @@ Public, implementation-neutral contract for the optional Token Cost App Relay fe
 ## Status
 
 - Protocol: `v1`
-- Contract: `1.0.0-draft`
-- Stability: draft until Swift, Dart and Node vectors pass together and Staging E2E is complete
+- Contract: `1.1.0`
+- Stability: frozen additive Protocol v1 analytics and security contract
 
 This repository contains no Relay server implementation, deployment configuration, production endpoint, credentials or client SDK.
 
@@ -14,7 +14,7 @@ This repository contains no Relay server implementation, deployment configuratio
 
 - `protocol-v1.md` — client-facing HTTP, WebSocket, pairing and cryptographic rules
 - `schemas/` — JSON Schema documents for pairing, opaque envelopes and relay query responses
-- `test-vectors/` — version snapshot, valid pairing payload and deterministic AES-256-GCM vector
+- `test-vectors/` — version snapshot, pairing/AES-256-GCM vectors, nonce binding and RFC 1950 zlib section vectors
 - `VERSION` — canonical contract version
 
 ## Consumers

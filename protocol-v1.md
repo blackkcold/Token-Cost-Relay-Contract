@@ -1,6 +1,6 @@
 # Relay Protocol v1
 
-Contract version: `1.0.0-draft`
+Contract version: `1.1.0`
 
 ## 1. Scope and trust boundary
 
@@ -45,6 +45,7 @@ PC-only routes require the PC token. App-only routes require the App token. Revo
 |---|---|---|
 | `POST /api/v1/devices/register` | Register PC | `{deviceId, pcToken}` |
 | `POST /api/v1/pair/start` | Create pairing code | `{deviceId, pairCode, expiresAt}` |
+| `POST /api/v1/pair/approve` | Explicitly approve the current pairing code from a 1.1-capable PC | `{ok, approved}` |
 | `POST /api/v1/pair/claim` | Claim pairing from app | `{deviceId, appToken}` |
 | `POST /api/v1/devices/revoke` | Revoke registration | `{ok, changed}` |
 | `DELETE /api/v1/devices` | Delete/revoke device | `{ok, deleted}` |
@@ -93,18 +94,46 @@ Envelope fields are defined by `schemas/envelope.schema.json`:
 Decrypted request payload:
 
 ```json
-{"action":"balance.refresh","issuedAtMilliseconds":1700000000000,"nonce":"unique-client-nonce"}
+{
+  "action": "balance.refresh",
+  "issuedAtMilliseconds": 1700000000000,
+  "nonce": "unique-client-nonce",
+  "requestedSections": ["overview", "cache", "cost", "usage", "modelDistribution", "trend", "heatmap"],
+  "sectionParams": {"trend": {"days": 30}, "heatmap": {"weeks": 52}}
+}
 ```
 
-The request timestamp must be within five minutes of the receiver's clock. The plaintext nonce is 16–100 characters and must not be replayed.
+The request timestamp must be within five minutes of the receiver's clock. The plaintext nonce is 16–100 characters and must not be replayed. Missing or empty `requestedSections` preserves the legacy snapshots-only response. Section names are unique and restricted to the published whitelist. `trend.days` is `1...90` (default 30); `heatmap.weeks` is `1...52` (default 52).
 
 Decrypted response payload:
 
 ```json
-{"generatedAtMilliseconds":1700000000000,"snapshots":[]}
+{
+  "generatedAtMilliseconds": 1700000000000,
+  "requestNonce": "unique-client-nonce",
+  "snapshots": [],
+  "compression": "zlib",
+  "sections": {
+    "overview": {"encoding": "json+zlib", "uncompressedBytes": 143, "data": "..."}
+  }
+}
 ```
 
-The exact `BalanceSnapshot` product model is owned by the Public App. Unknown snapshot providers or fields must not weaken envelope validation.
+The exact `BalanceSnapshot` product model is owned by the Public App. Unknown snapshot providers or fields must not weaken envelope validation. Every 1.1 response, including an encrypted business error, binds `requestNonce` to the decrypted request nonce. New clients reject a missing or mismatched nonce and require the macOS client to be upgraded.
+
+### Analytics section encoding and limits
+
+- The whitelist is `overview`, `cache`, `cost`, `usage`, `modelDistribution`, `trend`, and `heatmap`.
+- Section JSON is encoded as UTF-8, compressed as an RFC 1950 zlib stream, then Standard Base64 encoded.
+- Compression occurs before the response AES-256-GCM operation. The Relay still sees only the opaque outer envelope.
+- Each decompressed section is limited to 131,072 bytes and all decompressed sections together to 524,288 bytes.
+- The complete HTTP body or WebSocket frame is limited to 65,536 bytes. Implementations measure the final serialized transport object, not only the ciphertext.
+- A receiver must enforce decompressed output limits while decoding; the untrusted `uncompressedBytes` declaration is only a preflight hint.
+- Oversized responses are not truncated. The PC returns a nonce-bound `RESPONSE_TOO_LARGE` error so the app can request deterministic section batches.
+
+### Pairing approval
+
+The pair code is visible to the Relay because the app submits it over HTTPS. A 1.1-capable PC sends `X-Relay-Contract: 1.1.0` when starting a pairing. Such a code is unapproved until the PC calls `POST /api/v1/pair/approve` after an explicit user confirmation. Claiming an unapproved code returns `PAIRING_APPROVAL_REQUIRED`. Legacy PC clients omit the capability header and retain the 1.0 auto-approved behavior during migration.
 
 ## 7. Client error response
 
@@ -118,19 +147,25 @@ Stable v1 codes:
 
 ```text
 ALREADY_PAIRED
+ANALYTICS_UNAVAILABLE
+DECOMPRESSION_LIMIT_EXCEEDED
 DEVICE_NOT_FOUND
 DEVICE_RATE_LIMITED
 DUPLICATE_REQUEST
 INTERNAL_ERROR
 INVALID_APP_CREDENTIALS
 INVALID_CREDENTIALS
+INVALID_COMPRESSION
 INVALID_DEVICE_CREDENTIALS
 INVALID_PAIRING_PAYLOAD
 INVALID_PC_CREDENTIALS
 INVALID_RELAY_ENVELOPE
 INVALID_REQUEST
+INVALID_SECTION
+INVALID_SECTION_PARAMS
 IP_BLOCKED
 NOT_FOUND
+PAIRING_APPROVAL_REQUIRED
 PAIRING_INVALID_OR_EXPIRED
 PAIRING_RATE_LIMITED
 PC_DISCONNECTED
@@ -138,17 +173,33 @@ PC_OFFLINE
 PC_RESPONSE_TIMEOUT
 PC_SEND_FAILED
 REGISTRATION_RATE_LIMITED
+REQUEST_RATE_LIMITED
+REQUEST_REPLAYED
+REQUEST_TIMEOUT
 RELAY_INTERNAL_ERROR
+RESPONSE_TOO_LARGE
+SECTION_TOO_LARGE
+SECTIONS_TOO_LARGE
 SERVER_SHUTDOWN
 TOO_MANY_REQUESTS
+UPGRADE_REQUIRED
 ```
 
 Clients branch on `code`, never by matching the `error` text.
 
-## 8. Versioning and freeze gate
+## 8. Compatibility
 
-The `1.0.0-draft` contract may change only with synchronized Swift, Dart and Node compatibility updates. It becomes `1.0.0` and may be tagged only after:
+- Old Android with a 1.1 macOS client remains supported; additive response fields are ignored.
+- A missing `requestedSections` field receives snapshots only.
+- A new Android client with an old macOS client fails closed because the old response lacks `requestNonce`; the client displays `UPGRADE_REQUIRED` rather than accepting a replayable response.
+- Unknown section names and invalid parameters fail with stable encrypted errors instead of being silently ignored.
+
+## 9. Versioning and freeze gate
+
+The `1.1.0` contract may be tagged only after:
 
 1. All three implementations pass the published vectors.
 2. Staging completes register, pair, query, decrypt, reconnect, timeout, revoke and delete flows.
 3. QR, UI and logs are verified not to expose or override the Production endpoint.
+
+The `1.1.0` freeze gate was completed on 2026-08-25 before publication.

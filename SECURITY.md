@@ -17,4 +17,4 @@ Report vulnerabilities privately through GitHub Security Advisories for this rep
 
 ## Supported version
 
-Only the latest published Contract version is supported. `1.0.0-draft` is pre-release and must not be treated as frozen until its Staging gate is complete.
+Only the latest published Contract version is supported. Contract `1.1.0` keeps Protocol v1 and adds analytics sections, nonce binding, explicit pairing approval and bounded RFC 1950 encoding.
