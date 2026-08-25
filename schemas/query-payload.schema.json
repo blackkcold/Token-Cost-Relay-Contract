@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://relay-contract.example.invalid/v1/query-payload.schema.json",
+  "title": "Decrypted Relay Query Payload v1.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["action", "issuedAtMilliseconds", "nonce"],
+  "properties": {
+    "action": { "const": "balance.refresh" },
+    "issuedAtMilliseconds": { "type": "integer", "minimum": 0 },
+    "nonce": { "type": "string", "minLength": 16, "maxLength": 100 },
+    "requestedSections": {
+      "type": "array",
+      "maxItems": 7,
+      "uniqueItems": true,
+      "items": {
+        "enum": ["overview", "cache", "cost", "usage", "modelDistribution", "trend", "heatmap"]
+      }
+    },
+    "sectionParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "trend": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": { "days": { "type": "integer", "minimum": 1, "maximum": 90, "default": 30 } }
+        },
+        "heatmap": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": { "weeks": { "type": "integer", "minimum": 1, "maximum": 52, "default": 52 } }
+        }
+      }
+    }
+  }
+}
